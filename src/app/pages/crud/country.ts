@@ -19,6 +19,7 @@ import { InputIconModule } from 'primeng/inputicon';
 import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Hotel, Product, ProductService } from '../service/product.service';
+import { Country, CountryService } from '../service/country.service';
 
 interface Column {
     field: string;
@@ -32,7 +33,7 @@ interface ExportColumn {
 }
 
 @Component({
-    selector: 'app-crud',
+    selector: 'app-country',
     standalone: true,
     imports: [
         CommonModule,
@@ -58,7 +59,7 @@ interface ExportColumn {
         <p-toolbar styleClass="mb-6">
             <ng-template #start>
                 <p-button label="New" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" />
-                <p-button severity="secondary" label="Delete" icon="pi pi-trash" outlined (onClick)="deleteSelectedProducts()" [disabled]="!selectedProducts || !selectedProducts.length" />
+                <p-button severity="secondary" label="Delete" icon="pi pi-trash" outlined (onClick)="deleteSelectedProducts()" [disabled]="!selectedCountries || !selectedCountries.length" />
             </ng-template>
 
             <ng-template #end>
@@ -69,16 +70,16 @@ interface ExportColumn {
 
         <p-table
             #dt
-            [value]="products()"
+            [value]="countries()"
             [rows]="10"
             [columns]="cols"
             [paginator]="true"
             [globalFilterFields]="['name', 'country.name', 'representative.name', 'status']"
             [tableStyle]="{ 'min-width': '75rem' }"
-            [(selection)]="selectedProducts"
+            [(selection)]="selectedCountries"
             [rowHover]="true"
             dataKey="id"
-            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products"
+            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} countries"
             [showCurrentPageReport]="true"
             [rowsPerPageOptions]="[10, 20, 30]"
         >
@@ -109,20 +110,20 @@ interface ExportColumn {
                     </td>
                     <td style="min-width: 16rem">{{ product.name }}</td>
                     <td>
-                        <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" (click)="editProduct(product)" />
-                        <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true" (click)="deleteProduct(product)" />
+                        <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" (click)="editProduct(country)" />
+                        <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true" (click)="deleteProduct(country)" />
                     </td>
                 </tr>
             </ng-template>
         </p-table>
 
-        <p-dialog [(visible)]="productDialog" [style]="{ width: '450px' }" header="Hotel details" [modal]="true">
+        <p-dialog [(visible)]="countryDialog" [style]="{ width: '450px' }" header="Hotel details" [modal]="true">
             <ng-template #content>
                 <div class="flex flex-col gap-6">
                     <div>
                         <label for="name" class="block font-bold mb-3">Name</label>
-                        <input type="text" pInputText id="name" [(ngModel)]="product.name" required autofocus fluid />
-                        <small class="text-red-500" *ngIf="submitted && !product.name">Name is required.</small>
+                        <input type="text" pInputText id="name" [(ngModel)]="country.abbreviation" required autofocus fluid />
+                        <small class="text-red-500" *ngIf="submitted && !country.abbreviation">Name is required.</small>
                     </div>
                 </div>
             </ng-template>
@@ -135,16 +136,16 @@ interface ExportColumn {
 
         <p-confirmdialog [style]="{ width: '450px' }" />
     `,
-    providers: [MessageService, ProductService, ConfirmationService]
+    providers: [MessageService, CountryService, ConfirmationService]
 })
-export class Crud implements OnInit {
-    productDialog: boolean = false;
+export class CountryComponent implements OnInit {
+    countryDialog: boolean = false;
 
-    products = signal<Hotel[]>([]);
+    countries = signal<Country[]>([]);
 
-    product!: Hotel;
+    country!: Country;
 
-    selectedProducts!: Hotel[] | null;
+    selectedCountries!: Country[] | null;
 
     submitted: boolean = false;
 
@@ -157,7 +158,7 @@ export class Crud implements OnInit {
     cols!: Column[];
 
     constructor(
-        private productService: ProductService,
+        private countryService: CountryService,
         private messageService: MessageService,
         private confirmationService: ConfirmationService
     ) {}
@@ -176,10 +177,10 @@ export class Crud implements OnInit {
     }
 
     loadDemoData() {
-        this.productService.getProductsApi().subscribe((data) => {
+        this.countryService.getCountries().subscribe((data) => {
             console.log('result');
             console.log(data);
-            this.products.set(data.hotels || []);
+            this.countries.set(data.countries || []);
         });
 
         this.statuses = [
@@ -204,14 +205,14 @@ export class Crud implements OnInit {
     }
 
     openNew() {
-        this.product = {};
+        this.country = {};
         this.submitted = false;
-        this.productDialog = true;
+        this.countryDialog = true;
     }
 
-    editProduct(product: Hotel) {
-        this.product = { ...product };
-        this.productDialog = true;
+    editProduct(product: Country) {
+        this.country = { ...product };
+        this.countryDialog = true;
     }
 
     deleteSelectedProducts() {
@@ -222,7 +223,7 @@ export class Crud implements OnInit {
             accept: () => {
                 //this.products.set(this.products().filter((val) => !this.selectedProducts?.includes(val)));
                 
-                this.selectedProducts = null;
+                this.selectedCountries = null;
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Successful',
@@ -234,31 +235,31 @@ export class Crud implements OnInit {
     }
 
     hideDialog() {
-        this.productDialog = false;
+        this.countryDialog = false;
         this.submitted = false;
     }
 
-    deleteProduct(hotel: Hotel) {
-        this.confirmationService.confirm({
-            message: 'Are you sure you want to delete ' + hotel.name + '?',
-            header: 'Confirm',
-            icon: 'pi pi-exclamation-triangle',
-            accept: () => {
-                //this.products.set(this.products().filter((val) => val.id !== product.id));
-                this.productService.deleteHotel(hotel).subscribe((res) => {
-                    this.refresh();
-                    this.product = {};
-                });
-                
-                
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Product Deleted',
-                    life: 3000
-                });
-            }
-        });
+    deleteProduct(hotel: Country) {
+    //    this.confirmationService.confirm({
+    //        message: 'Are you sure you want to delete ' + hotel.name + '?',
+    //        header: 'Confirm',
+    //        icon: 'pi pi-exclamation-triangle',
+    //        accept: () => {
+    //            //this.products.set(this.products().filter((val) => val.id !== product.id));
+    //            this.country.deleteHotel(hotel).subscribe((res) => {
+    //                this.refresh();
+    //                this.product = {};
+    //            });
+    //            
+    //            
+    //            this.messageService.add({
+    //                severity: 'success',
+    //                summary: 'Successful',
+    //                detail: 'Product Deleted',
+    //                life: 3000
+    //            });
+    //        }
+    //    });
     }
 
     findIndexById(id: string): number {
@@ -296,12 +297,12 @@ export class Crud implements OnInit {
     }
 
     saveProduct() {
-        console.log('save clicked');
-        this.submitted = true;
-        this.productService.saveHotel(this.product).subscribe((data) => {
-            this.refresh();
-        });
-        this.productDialog = false;
-        this.product = {};
+        //console.log('save clicked');
+        //this.submitted = true;
+        //this.countryService.saveHotel(this.country).subscribe((data) => {
+        //    this.refresh();
+        //});
+        //this.countryDialog = false;
+        //this.product = {};
     }
 }
